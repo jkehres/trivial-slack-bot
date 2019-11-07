@@ -1,0 +1,28 @@
+{
+  "name": "trivial-slack-bot",
+  "version": "1.0.0",
+  "description": "A serverless trivia bot for Slack",
+  "main": "src/app.js",
+  "scripts": {
+    "sls": "sls",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jeff Kehres",
+  "license": "ISC",
+  "devDependencies": {
+    "eslint": "^6.6.0",
+    "serverless": "^1.56.1",
+    "serverless-plugin-common-excludes": "^3.0.0",
+    "serverless-plugin-include-dependencies": "^4.0.0"
+  },
+  "dependencies": {
+    "@slack/web-api": "^5.4.0",
+    "aws-sdk": "^2.564.0",
+    "bunyan": "^1.8.12",
+    "koa": "^2.11.0",
+    "koa-bodyparser": "^4.2.1",
+    "koa-connect": "^2.0.1",
+    "koa-router": "^7.4.0",
+    "serverless-http": "^2.3.0"
+  }
+}
