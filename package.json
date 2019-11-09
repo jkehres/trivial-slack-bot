@@ -4,6 +4,7 @@
   "description": "A serverless trivia bot for Slack",
   "main": "src/app.js",
   "scripts": {
+    "lint": "eslint src",
     "sls": "sls",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -19,6 +20,7 @@
     "@slack/web-api": "^5.4.0",
     "aws-sdk": "^2.564.0",
     "bunyan": "^1.8.12",
+    "dateformat": "^3.0.3",
     "koa": "^2.11.0",
     "koa-bodyparser": "^4.2.1",
     "koa-connect": "^2.0.1",
