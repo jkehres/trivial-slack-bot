@@ -13,6 +13,7 @@ const actionHandler = require('./actionHandler');
 const eventHandler = require('./eventHandler');
 const errorWithStatus = require('./errorWithStatus');
 const logger = require('./logger');
+const blockKit = require('./blockKit');
 
 const token = process.env.SLACK_TOKEN;
 
@@ -32,18 +33,37 @@ router.get('/test', async (ctx) => {
 
 router.post('/command', verifyRequest, commandHandler(async (command) => {
 	logger.debug({command}, 'Received command');
-	return {
-		response_type: 'ephemeral',
-		text: `You sent the command '${command.text}'`
-	};
+	let result;
+	switch (command.text) {
+		case 'help':
+			return {
+				response_type: 'ephemeral',
+				text: 'You asked for help',
+				blocks: blockKit.getHelpMessage().blocks
+			};
+		case 'create':
+			result = await web.views.open({
+				trigger_id: command.trigger_id,
+				view: blockKit.getCreateModal()
+			});
+			if (!result.ok) {
+				throw errorWithStatus(`Failed to open view: ${result.error}`, 500);
+			}
+			break;
+		case 'close':
+			result = await web.views.open({
+				trigger_id: command.trigger_id,
+				view: blockKit.getCloseModal(new Date())
+			});
+			if (!result.ok) {
+				throw errorWithStatus(`Failed to open view: ${result.error}`, 500);
+			}
+			break;
+	}
 }));
 
 router.post('/action', verifyRequest, actionHandler(async (action) => {
 	logger.debug({action}, 'Received action');
-	return {
-		response_type: 'ephemeral',
-		text: 'You performed an action'
-	};
 }));
 
 router.post('/event', verifyRequest, eventHandler(async (event) => {
@@ -52,7 +72,8 @@ router.post('/event', verifyRequest, eventHandler(async (event) => {
 		const result = await web.chat.postEphemeral({
 			channel: event.channel,
 			user: event.user,
-			text: 'You mentioned me'
+			text: 'You mentioned me',
+			blocks: blockKit.getMentionedMessage().blocks
 		});
 		if (!result.ok) {
 			throw errorWithStatus(`Failed to post message: ${result.error}`, 500);
