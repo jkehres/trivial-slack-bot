@@ -1,10 +1,14 @@
 service: trivial-slack-bot
 
+custom:
+  tableName: ${self:service}-${self:provider.stage}-questions
+
 provider:
   name: aws
   environment:
     SLACK_TOKEN: ${opt:token}
     SLACK_SIGNING_SECRET: ${opt:signing-secret}
+    TABLE_NAME: ${self:custom.tableName}
   runtime: nodejs10.x
   profile: ${opt:profile}
   region: ${opt:region}
@@ -15,9 +19,18 @@ provider:
   iamRoleStatements:
     - Effect: "Allow"
       Action:
-      - "lambda:InvokeFunction"
+        # Table permissions
+        - dynamodb:Query
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        # Stream permissions
+        - dynamodb:GetRecords
+        - dynamodb:GetShardIterator
+        - dynamodb:DescribeStream
+        - dynamodb:ListStreams
       Resource:
-      - "*"
+      - Fn::GetAtt: [ QuestionsTable, Arn ]
 
 plugins:
   - serverless-plugin-common-excludes
@@ -31,3 +44,32 @@ functions:
       - http:
           method: ANY
           path: /{any+}
+  stream:
+    handler: src/stream.handler
+    events:
+      - stream:
+          type: dynamodb
+          arn: { Fn::GetAtt: [ QuestionsTable, StreamArn ] }
+          batchSize: 100
+          batchWindow: 1
+          startingPosition: TRIM_HORIZON
+
+resources:
+  Resources:
+    QuestionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.tableName}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: channel
+            AttributeType: S
+          - AttributeName: date
+            AttributeType: S
+        KeySchema:
+          - AttributeName: channel
+            KeyType: HASH
+          - AttributeName: date
+            KeyType: RANGE
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
