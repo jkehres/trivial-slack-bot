@@ -59,6 +59,9 @@ class Question {
 
 class DynamoDbRecord {
 	constructor(record) {
+		if(!record || !record.dynamodb || !record.dynamodb.Keys || record.dynamodb.SequenceNumber) {
+			throw new Error('Bad Record');
+		}
 		this._keys = record.dynamodb.Keys;
 		this._sequenceNumber = record.dynamodb.SequenceNumber;
 		this._newImage = record.dynamodb.NewImage;
@@ -81,10 +84,14 @@ class DynamoDbRecord {
 function decodeEvent(event) {
 	const records = {};
 	event.event.Records.forEach(record => {
-		record = new DynamoDbRecord(record);
-		const uniqueRecordId = record.uniqueId();
-		if (!records[uniqueRecordId] || record.isMoreNewThan(records[uniqueRecordId])) {
-			records[uniqueRecordId] = record;
+		try {
+			record = new DynamoDbRecord(record);
+			const uniqueRecordId = record.uniqueId();
+			if (!records[uniqueRecordId] || record.isMoreNewThan(records[uniqueRecordId])) {
+				records[uniqueRecordId] = record;
+			}
+		} catch(error) {
+			logger.debug(error, 'Event received');
 		}
 	});
 
