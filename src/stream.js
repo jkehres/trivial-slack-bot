@@ -83,7 +83,7 @@ class DynamoDbRecord {
 
 function decodeEvent({event}) {
 	const records = {};
-	event.event.Records.forEach(record => {
+	event.Records.forEach(record => {
 		try {
 			record = new DynamoDbRecord(record);
 			const uniqueRecordId = record.uniqueId();
