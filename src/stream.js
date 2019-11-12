@@ -73,7 +73,7 @@ class DynamoDbRecord {
 
 	uniqueId() {
 		var b = new Buffer(JSON.stringify(this._keys));
-		return b.toString('base64');;
+		return b.toString('base64');
 	}
 
 	isMoreNewThan(record) {
