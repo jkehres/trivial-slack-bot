@@ -81,7 +81,7 @@ class DynamoDbRecord {
 	}
 }
 
-function decodeEvent(event) {
+function decodeEvent({event}) {
 	const records = {};
 	event.event.Records.forEach(record => {
 		try {
