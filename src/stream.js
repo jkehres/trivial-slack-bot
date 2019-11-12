@@ -59,7 +59,7 @@ class Question {
 
 class DynamoDbRecord {
 	constructor(record) {
-		if(!record || !record.dynamodb || !record.dynamodb.Keys || record.dynamodb.SequenceNumber) {
+		if(!record || !record.dynamodb || !record.dynamodb.Keys || !record.dynamodb.SequenceNumber) {
 			throw new Error('Bad Record');
 		}
 		this._keys = record.dynamodb.Keys;
