@@ -2,7 +2,7 @@
 
 const logger = require('./logger');
 const groupBy = require('lodash.groupby');
-const AWS = require('aws');
+const AWS = require('aws-sdk');
 const allowedEvents = ['MODIFY', 'INSERT'];
 
 module.exports.handler = async (event) => {
