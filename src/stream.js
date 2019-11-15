@@ -12,6 +12,7 @@ module.exports.handler = async (event) => {
 
 	const groupedRecords = groupBy(unmarshalledRecords, record => {
 		if (!record.channel || !record.date) {
+			logger.debug({record}, 'Bad Record');
 			return 'deleteMe';
 		}
 
