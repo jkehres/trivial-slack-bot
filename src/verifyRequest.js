@@ -1,7 +1,6 @@
 'use strict';
 
 const crypto = require('crypto');
-const logger = require('./logger');
 const AppError = require('./AppError');
 
 const MAX_AGE = 5 * 60 * 1000; // 5 minutes
@@ -31,7 +30,6 @@ module.exports = async (ctx, next) => {
 	hmac.update(signedData);
 	const actualHash = hmac.digest();
 
-	logger.debug({timestamp, signedData, expectedHash, actualHash}, 'Validating request');
 	if (!crypto.timingSafeEqual(actualHash, expectedHash)) {
 		throw new AppError('Request failed validation', 400);
 	}

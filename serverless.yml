@@ -24,6 +24,7 @@ provider:
         - dynamodb:GetItem
         - dynamodb:PutItem
         - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
         # Stream permissions
         - dynamodb:GetRecords
         - dynamodb:GetShardIterator
