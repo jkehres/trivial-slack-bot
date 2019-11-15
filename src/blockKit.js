@@ -186,7 +186,7 @@ module.exports.getClosedMessage = function({date, questionText, answer, answerTe
 	};
 };
 
-// https://api.slack.com/tools/block-kit-builder?mode=modal&view=%7B%22type%22%3A%22modal%22%2C%22title%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Trivia%20Question%22%7D%2C%22submit%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Create%22%7D%2C%22close%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Cancel%22%7D%2C%22blocks%22%3A%5B%7B%22type%22%3A%22input%22%2C%22element%22%3A%7B%22type%22%3A%22datepicker%22%2C%22initial_date%22%3A%222019-11-08%22%2C%22placeholder%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Select%20a%20date%22%7D%7D%2C%22label%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Date%22%7D%7D%2C%7B%22type%22%3A%22input%22%2C%22element%22%3A%7B%22type%22%3A%22plain_text_input%22%2C%22placeholder%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Text%20of%20question%20(optional)%22%7D%7D%2C%22label%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Text%22%7D%7D%5D%7D
+// https://api.slack.com/tools/block-kit-builder?mode=modal&view=%7B%22type%22%3A%22modal%22%2C%22title%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Trivia%20Question%22%7D%2C%22submit%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Create%22%7D%2C%22close%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Cancel%22%7D%2C%22blocks%22%3A%5B%7B%22type%22%3A%22input%22%2C%22element%22%3A%7B%22type%22%3A%22datepicker%22%2C%22initial_date%22%3A%222019-11-08%22%2C%22placeholder%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Select%20a%20date%22%7D%7D%2C%22label%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Date%22%7D%7D%2C%7B%22type%22%3A%22input%22%2C%22element%22%3A%7B%22type%22%3A%22plain_text_input%22%2C%22placeholder%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Text%20of%20question%20(optional)%22%7D%7D%2C%22label%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Text%22%7D%2C%22optional%22%3Atrue%7D%5D%7D
 module.exports.getCreateModal = function() {
 	const now = new Date();
 	return {
@@ -231,13 +231,14 @@ module.exports.getCreateModal = function() {
 				label: {
 					type: 'plain_text',
 					text: 'Text'
-				}
+				},
+				optional: true
 			}
 		]
 	};
 };
 
-// https://api.slack.com/tools/block-kit-builder?mode=modal&view=%7B%22type%22%3A%22modal%22%2C%22title%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Trivia%20Question%22%7D%2C%22submit%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Close%22%7D%2C%22close%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Cancel%22%7D%2C%22blocks%22%3A%5B%7B%22type%22%3A%22section%22%2C%22text%22%3A%7B%22type%22%3A%22mrkdwn%22%2C%22text%22%3A%22*Date*%5CnNovember%208%2C%202019%22%7D%7D%2C%7B%22type%22%3A%22input%22%2C%22element%22%3A%7B%22type%22%3A%22static_select%22%2C%22placeholder%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Select%20an%20answer%22%7D%2C%22options%22%3A%5B%7B%22text%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Fact%22%7D%2C%22value%22%3A%22fact%22%7D%2C%7B%22text%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Crap%22%7D%2C%22value%22%3A%22crap%22%7D%5D%2C%22initial_option%22%3A%7B%22text%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Fact%22%7D%2C%22value%22%3A%22fact%22%7D%7D%2C%22label%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Answer%22%7D%7D%2C%7B%22type%22%3A%22input%22%2C%22element%22%3A%7B%22type%22%3A%22plain_text_input%22%2C%22placeholder%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Text%20of%20answer%20(optional)%22%7D%7D%2C%22label%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Text%22%7D%7D%5D%7D
+// https://api.slack.com/tools/block-kit-builder?mode=modal&view=%7B%22type%22%3A%22modal%22%2C%22title%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Trivia%20Question%22%7D%2C%22submit%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Close%22%7D%2C%22close%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Cancel%22%7D%2C%22blocks%22%3A%5B%7B%22type%22%3A%22section%22%2C%22text%22%3A%7B%22type%22%3A%22mrkdwn%22%2C%22text%22%3A%22*Date*%5CnNovember%208%2C%202019%22%7D%7D%2C%7B%22type%22%3A%22input%22%2C%22element%22%3A%7B%22type%22%3A%22static_select%22%2C%22placeholder%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Select%20an%20answer%22%7D%2C%22options%22%3A%5B%7B%22text%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Fact%22%7D%2C%22value%22%3A%22fact%22%7D%2C%7B%22text%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Crap%22%7D%2C%22value%22%3A%22crap%22%7D%5D%2C%22initial_option%22%3A%7B%22text%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Fact%22%7D%2C%22value%22%3A%22fact%22%7D%7D%2C%22label%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Answer%22%7D%7D%2C%7B%22type%22%3A%22input%22%2C%22element%22%3A%7B%22type%22%3A%22plain_text_input%22%2C%22placeholder%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Text%20of%20answer%20(optional)%22%7D%7D%2C%22label%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Text%22%7D%2C%22optional%22%3Atrue%7D%5D%7D
 module.exports.getCloseModal = function(date) {
 	return {
 		type: 'modal',
@@ -310,7 +311,8 @@ module.exports.getCloseModal = function(date) {
 				label: {
 					type: 'plain_text',
 					text: 'Text'
-				}
+				},
+				optional: true
 			}
 		]
 	};
