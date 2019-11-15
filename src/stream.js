@@ -7,7 +7,7 @@ const allowedEvents = ['MODIFY', 'INSERT'];
 
 module.exports.handler = async (event) => {
 	const unmarshalledRecords = event.Records
-		.filter(record => record.eventName && allowedEvents.includes(record.eventName))
+		.filter(record => allowedEvents.includes(record.eventName))
 		.map(record => AWS.DynamoDB.Converter.unmarshall(record.dynamodb.NewImage));
 
 	const groupedRecords = groupBy(unmarshalledRecords, record => {
