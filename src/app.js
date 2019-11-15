@@ -1,6 +1,5 @@
 'use strict';
 
-const { WebClient } = require('@slack/web-api');
 const Koa = require('koa');
 const Router = require('koa-router');
 const bodyParser = require('koa-bodyparser');
@@ -14,10 +13,8 @@ const eventHandler = require('./eventHandler');
 const errorWithStatus = require('./errorWithStatus');
 const logger = require('./logger');
 const blockKit = require('./blockKit');
+const slack = require('./slackClient');
 
-const token = process.env.SLACK_TOKEN;
-
-const web = new WebClient(token);
 const router = new Router();
 
 router.get('/ping', async (ctx) => {
@@ -26,7 +23,7 @@ router.get('/ping', async (ctx) => {
 });
 
 router.get('/test', async (ctx) => {
-	const result = await web.api.test();
+	const result = await slack.api.test();
 	ctx.response.body = result;
 	ctx.response.status = 200;
 });
@@ -42,7 +39,7 @@ router.post('/command', verifyRequest, commandHandler(async (command) => {
 				blocks: blockKit.getHelpMessage().blocks
 			};
 		case 'create':
-			result = await web.views.open({
+			result = await slack.views.open({
 				trigger_id: command.trigger_id,
 				view: blockKit.getCreateModal()
 			});
@@ -51,7 +48,7 @@ router.post('/command', verifyRequest, commandHandler(async (command) => {
 			}
 			break;
 		case 'close':
-			result = await web.views.open({
+			result = await slack.views.open({
 				trigger_id: command.trigger_id,
 				view: blockKit.getCloseModal(new Date())
 			});
@@ -69,7 +66,7 @@ router.post('/action', verifyRequest, actionHandler(async (action) => {
 router.post('/event', verifyRequest, eventHandler(async (event) => {
 	logger.debug({event}, 'Received event');
 	if (event.type === 'app_mention') {
-		const result = await web.chat.postEphemeral({
+		const result = await slack.chat.postEphemeral({
 			channel: event.channel,
 			user: event.user,
 			text: 'You mentioned me',
