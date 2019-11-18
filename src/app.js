@@ -10,10 +10,25 @@ const verifyRequest = require('./verifyRequest');
 const commandHandler = require('./commandHandler');
 const actionHandler = require('./actionHandler');
 const eventHandler = require('./eventHandler');
-const errorWithStatus = require('./errorWithStatus');
+const AppError = require('./AppError');
 const logger = require('./logger');
 const blockKit = require('./blockKit');
 const slack = require('./slackClient');
+const dynamo = require('./dynamo');
+
+async function postEphemeral({channel, text, blocks, user}) {
+	const result = await slack.chat.postEphemeral({channel, text, blocks, user});
+	if (!result.ok) {
+		throw new AppError(`Failed to post message: ${result.error}`, 500);
+	}
+}
+
+async function openView({trigger_id, view}) {
+	const result = await slack.views.open({trigger_id, view});
+	if (!result.ok) {
+		throw new AppError(`Failed to open view: ${result.error}`, 500);
+	}
+}
 
 const router = new Router();
 
@@ -30,51 +45,123 @@ router.get('/test', async (ctx) => {
 
 router.post('/command', verifyRequest, commandHandler(async (command) => {
 	logger.debug({command}, 'Received command');
-	let result;
+	const channel = command.channel_id;
+	const user = command.user_id;
 	switch (command.text) {
 		case 'help':
+			logger.debug({user, channel}, 'Help command');
 			return {
 				response_type: 'ephemeral',
 				text: 'You asked for help',
-				blocks: blockKit.getHelpMessage().blocks
+				blocks: blockKit.getHelpMessage()
 			};
-		case 'create':
-			result = await slack.views.open({
-				trigger_id: command.trigger_id,
-				view: blockKit.getCreateModal()
-			});
-			if (!result.ok) {
-				throw errorWithStatus(`Failed to open view: ${result.error}`, 500);
+		case 'create': {
+			const date = await dynamo.getCurrentDate(channel);
+			logger.debug({user, channel, date}, 'Create command');
+			if (date) {
+				logger.debug({user, channel, date}, 'Create command failed');
+				return {
+					response_type: 'ephemeral',
+					text: 'Create failed',
+					blocks: blockKit.getMulitCreateErrorMessage(Date.parse(date))
+				};
+			} else {
+				await openView({
+					trigger_id: command.trigger_id,
+					view: blockKit.getCreateModal(channel)
+				});
 			}
 			break;
-		case 'close':
-			result = await slack.views.open({
-				trigger_id: command.trigger_id,
-				view: blockKit.getCloseModal(new Date())
-			});
-			if (!result.ok) {
-				throw errorWithStatus(`Failed to open view: ${result.error}`, 500);
+		}
+		case 'close': {
+			const date = await dynamo.getCurrentDate(channel);
+			logger.debug({user, channel, date}, 'Close command');
+			if (date) {
+				await openView({
+					trigger_id: command.trigger_id,
+					view: blockKit.getCloseModal({
+						channel,
+						date: Date.parse(date)
+					})
+				});
+			} else {
+				logger.debug({user, channel, date}, 'Close command failed');
+				return {
+					response_type: 'ephemeral',
+					text: 'Close failed',
+					blocks: blockKit.getCloseErrorMessage()
+				};
 			}
 			break;
+		}
 	}
 }));
 
 router.post('/action', verifyRequest, actionHandler(async (action) => {
 	logger.debug({action}, 'Received action');
+	const user = action.user.id;
+	switch (action.type) {
+		case 'view_submission': {
+			const view = action.view;
+			switch (view.callback_id) {
+				case 'create': {
+					const channel = view.private_metadata;
+					const date = view.state.values.create_date_block.create_date_action.selected_date;
+					const questionText = view.state.values.create_text_block.create_text_action.value || null;
+					logger.debug({user, channel, date, questionText}, 'Create action');
+					if (!await dynamo.create({channel, date, questionText})) {
+						logger.debug({user, channel, date, questionText}, 'Create action failed');
+						await postEphemeral({
+							channel,
+							user,
+							text: 'Create failed',
+							blocks: blockKit.getRecreateErrorMessage(Date.parse(date))
+						});
+					}
+					break;
+				}
+				case 'close': {
+					const {channel, date} = JSON.parse(view.private_metadata);
+					const answer = view.state.values.close_answer_block.close_answer_action.selected_option.value;
+					const answerText = view.state.values.close_text_block.close_text_action.value || null;
+					logger.debug({user, channel, date, answer, answerText}, 'Close action');
+					if (!await dynamo.close({channel, date, answer, answerText})) {
+						logger.debug({user, channel, date, answer, answerText}, 'Close action failed');
+						await postEphemeral({
+							channel,
+							user,
+							text: 'Internal error',
+							blocks: blockKit.getInternalErrorMessage()
+						});
+					}
+					break;
+				}
+			}
+			break;
+		}
+		case 'block_actions': {
+			const [answer, date] = action.actions[0].value.split('_');
+			const channel = action.channel.id;
+			const timestamp = Date.now();
+			logger.debug({user, channel, date, answer, timestamp}, 'Vote action');
+			await dynamo.vote({channel, date, user, answer, timestamp});
+			break;
+		}
+	}
 }));
 
 router.post('/event', verifyRequest, eventHandler(async (event) => {
 	logger.debug({event}, 'Received event');
 	if (event.type === 'app_mention') {
-		const result = await slack.chat.postEphemeral({
-			channel: event.channel,
-			user: event.user,
+		const channel = event.channel;
+		const user = event.user;
+		logger.debug({user, channel}, 'Mention event');
+		await postEphemeral({
+			channel,
+			user,
 			text: 'You mentioned me',
-			blocks: blockKit.getMentionedMessage().blocks
+			blocks: blockKit.getMentionedMessage()
 		});
-		if (!result.ok) {
-			throw errorWithStatus(`Failed to post message: ${result.error}`, 500);
-		}
 	}
 }));
 
