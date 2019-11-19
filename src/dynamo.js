@@ -72,11 +72,11 @@ module.exports.create = async ({channel, date, questionText}) => {
 			{
 				Put: {
 					TableName: TABLE_NAME,
-					Item: marshall({channel, date, questionText}),
+					Item: marshall({channel, date, questionText, users: {}}),
 					ExpressionAttributeNames: {
-						'#c': 'channel'
+						'#channel': 'channel'
 					},
-					ConditionExpression: 'attribute_not_exists(#c)'
+					ConditionExpression: 'attribute_not_exists(#channel)'
 				}
 			},
 			{
@@ -84,9 +84,9 @@ module.exports.create = async ({channel, date, questionText}) => {
 					TableName: TABLE_NAME,
 					Item: marshall({channel, date: '_current', currentDate: date}),
 					ExpressionAttributeNames: {
-						'#c': 'channel'
+						'#channel': 'channel'
 					},
-					ConditionExpression: 'attribute_not_exists(#c)'
+					ConditionExpression: 'attribute_not_exists(#channel)'
 				}
 			}
 		]
@@ -101,13 +101,13 @@ module.exports.close = async ({channel, date, answer, answerText}) => {
 					TableName: TABLE_NAME,
 					Key: marshall({channel, date}),
 					ExpressionAttributeNames: {
-						'#c': 'channel',
-						'#a': 'answer',
-						'#at': 'answerText'
+						'#channel': 'channel',
+						'#answer': 'answer',
+						'#answerText': 'answerText'
 					},
-					ExpressionAttributeValues: marshall({':a': answer, ':at': answerText}),
-					UpdateExpression: 'SET #a = :a, #at = :at',
-					ConditionExpression: 'attribute_exists(#c) and attribute_not_exists(#a)'
+					ExpressionAttributeValues: marshall({':answer': answer, ':answerText': answerText}),
+					UpdateExpression: 'SET #answer = :answer, #answerText = :answerText',
+					ConditionExpression: 'attribute_exists(#channel) and attribute_not_exists(#answer)'
 				}
 			},
 			{
@@ -115,9 +115,9 @@ module.exports.close = async ({channel, date, answer, answerText}) => {
 					TableName: TABLE_NAME,
 					Key: marshall({channel, date: '_current'}),
 					ExpressionAttributeNames: {
-						'#c': 'channel'
+						'#channel': 'channel'
 					},
-					ConditionExpression: 'attribute_exists(#c)'
+					ConditionExpression: 'attribute_exists(#channel)'
 				}
 			}
 		]
@@ -129,12 +129,12 @@ module.exports.setSlackId = async ({channel, date, slackId}) => {
 		TableName: TABLE_NAME,
 		Key: marshall({channel, date}),
 		ExpressionAttributeNames: {
-			'#c': 'channel',
-			'#sid': 'slackId'
+			'#channel': 'channel',
+			'#slackId': 'slackId'
 		},
-		ExpressionAttributeValues: marshall({':sid': slackId}),
-		UpdateExpression: 'SET #sid = :sid',
-		ConditionExpression: 'attribute_exists(#c) and attribute_not_exists(#sid)'
+		ExpressionAttributeValues: marshall({':slackId': slackId}),
+		UpdateExpression: 'SET #slackId = :slackId',
+		ConditionExpression: 'attribute_exists(#channel) and attribute_not_exists(#slackId)'
 	});
 };
 
@@ -143,14 +143,14 @@ async function voteFirst({channel, date, user, answer, timestamp}) {
 		TableName: TABLE_NAME,
 		Key: marshall({channel, date}),
 		ExpressionAttributeNames: {
-			'#c': 'channel',
-			'#a': 'answer',
-			'#ut': `users.${user}.timestamp`,
-			'#ua': `users.${user}.answer`
+			'#channel': 'channel',
+			'#answer': 'answer',
+			'#users': 'users',
+			'#user': user
 		},
-		ExpressionAttributeValues: marshall({':ut': timestamp, ':ua': answer}),
-		UpdateExpression: 'SET #ut = :ut, #ua = :ua',
-		ConditionExpression: 'attribute_exists(#c) and attribute_not_exists(#a) and attribute_not_exists(#ua)'
+		ExpressionAttributeValues: marshall({':subObject': {answer, timestamp}}),
+		UpdateExpression: 'SET #users.#user = :subObject',
+		ConditionExpression: 'attribute_exists(#channel) and attribute_not_exists(#answer) and attribute_not_exists(#users.#user.#answer)'
 	});
 }
 
@@ -159,13 +159,14 @@ async function voteAgain({channel, date, user, answer}) {
 		TableName: TABLE_NAME,
 		Key: marshall({channel, date}),
 		ExpressionAttributeNames: {
-			'#c': 'channel',
-			'#a': 'answer',
-			'#ua': `users.${user}.answer`
+			'#channel': 'channel',
+			'#answer': 'answer',
+			'#users': 'users',
+			'#user': user
 		},
-		ExpressionAttributeValues: marshall({':ua': answer}),
-		UpdateExpression: 'SET #ua = :ua',
-		ConditionExpression: 'attribute_exists(#c) and attribute_not_exists(#a) and attribute_exists(#ua) and not #ua = :ua'
+		ExpressionAttributeValues: marshall({':answer': answer}),
+		UpdateExpression: 'SET #users.#user.#answer = :answer',
+		ConditionExpression: 'attribute_exists(#channel) and attribute_not_exists(#answer) and attribute_exists(#users.#user.#answer) and not #users.#user.#answer = :answer'
 	});
 }
 
