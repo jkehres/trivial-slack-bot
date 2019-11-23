@@ -134,7 +134,7 @@ module.exports.getOpenMessage = function({date, questionText, responses}) {
 				type: 'mrkdwn',
 				text: responsesMarkdown.join('\n')
 			}
-		})
+		});
 	}
 
 	return blocks;
@@ -151,29 +151,33 @@ module.exports.getClosedMessage = function({date, questionText, answer, answerTe
 		mainMarkdown += `\n> ${answerText}`;
 	}
 
-	const responsesMarkdown = [];
-	responses.forEach(resp => {
-		const answerEmoji = (resp.answer === answer) ? ':heavy_check_mark:' : ':x:';
-		const respEmoji = resp.answer ? ':+1:' : ':-1:';
-		responsesMarkdown.push(`${answerEmoji} ${respEmoji} ${resp.name}`);
-	});
-
-	return  [
+	const blocks = [
 		{
 			type: 'section',
 			text: {
 				type: 'mrkdwn',
 				text: mainMarkdown
 			}
-		},
-		{
+		}
+	];
+
+	if (responses && responses.length > 0) {
+		const responsesMarkdown = [];
+		responses.forEach(resp => {
+			const respEmoji = resp.answer ? ':+1:' : ':-1:';
+			responsesMarkdown.push(`${respEmoji} ${resp.name}`);
+		});
+
+		blocks.push({
 			type: 'section',
 			text: {
 				type: 'mrkdwn',
 				text: responsesMarkdown.join('\n')
 			}
-		}
-	];
+		});
+	}
+
+	return blocks;
 };
 
 // https://api.slack.com/tools/block-kit-builder?mode=modal&view=%7B%22callback_id%22%3A%22create%22%2C%22type%22%3A%22modal%22%2C%22title%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Trivia%20Question%22%7D%2C%22submit%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Create%22%7D%2C%22close%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Cancel%22%7D%2C%22blocks%22%3A%5B%7B%22block_id%22%3A%22create_date_block%22%2C%22type%22%3A%22input%22%2C%22element%22%3A%7B%22action_id%22%3A%22create_date_action%22%2C%22type%22%3A%22datepicker%22%2C%22initial_date%22%3A%222019-11-08%22%2C%22placeholder%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Select%20a%20date%22%7D%7D%2C%22label%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Date%22%7D%7D%2C%7B%22block_id%22%3A%22create_text_block%22%2C%22type%22%3A%22input%22%2C%22element%22%3A%7B%22action_id%22%3A%22create_text_action%22%2C%22type%22%3A%22plain_text_input%22%2C%22placeholder%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Text%20of%20question%20(optional)%22%7D%7D%2C%22label%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Text%22%7D%2C%22optional%22%3Atrue%7D%5D%7D
