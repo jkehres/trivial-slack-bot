@@ -81,13 +81,18 @@ module.exports.getInternalErrorMessage = function() {
 };
 
 // https://api.slack.com/tools/block-kit-builder?mode=message&blocks=%5B%7B%22type%22%3A%22section%22%2C%22text%22%3A%7B%22type%22%3A%22mrkdwn%22%2C%22text%22%3A%22Trivia%20question%20for%20November%208%2C%202019%5Cn%3E%20Harald%2C%20nicknamed%20Tangle-hair%2C%20took%20an%20oath%20not%20to%20cut%20or%20comb%20his%20hair%20until%20he%20became%20the%20first%20king%20of%20a%20united%20Norway.%22%7D%7D%2C%7B%22block_id%22%3A%22vote_block%22%2C%22type%22%3A%22actions%22%2C%22elements%22%3A%5B%7B%22action_id%22%3A%22vote_fact_action%22%2C%22type%22%3A%22button%22%2C%22text%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Fact%22%7D%2C%22style%22%3A%22primary%22%2C%22value%22%3A%22fact%22%7D%2C%7B%22action_id%22%3A%22vote_crap_action%22%2C%22type%22%3A%22button%22%2C%22text%22%3A%7B%22type%22%3A%22plain_text%22%2C%22text%22%3A%22Crap%22%7D%2C%22style%22%3A%22danger%22%2C%22value%22%3A%22crap%22%7D%5D%7D%2C%7B%22type%22%3A%22section%22%2C%22text%22%3A%7B%22type%22%3A%22mrkdwn%22%2C%22text%22%3A%22%3A%201%3A%20Alice%5Cn%3A-1%3A%20Bob%5Cn%3A%201%3A%20Carolyn%5Cn%3A%201%3A%20Dave%22%7D%7D%5D
-module.exports.getOpenMessage = function({date, questionText, responses}) {
+module.exports.getOpenMessage = function({date, questionText, responses, answer, answerText}) {
 	let mainMarkdown = `Trivia question for ${dateFormat(date, 'mmmm d, yyyy')}`;
 	if (questionText) {
 		mainMarkdown += `\n> ${questionText}`;
 	}
+	if (answer) {
+		mainMarkdown +=`\n*Answer:* ${answer ? 'Fact' : 'Crap'}`;
+		if (answerText) {
+			mainMarkdown += `\n> ${answerText}`;
+		}
+	}
 
-	const dateKey = dateFormat(date, 'yyyy-mm-dd');
 	const blocks = [
 		{
 			type: 'section',
@@ -95,8 +100,12 @@ module.exports.getOpenMessage = function({date, questionText, responses}) {
 				type: 'mrkdwn',
 				text: mainMarkdown
 			}
-		},
-		{
+		}
+	];
+
+	if (!answer) {
+		const dateKey = dateFormat(date, 'yyyy-mm-dd');
+		blocks.push({
 			type: 'actions',
 			elements: [
 				{
@@ -118,48 +127,8 @@ module.exports.getOpenMessage = function({date, questionText, responses}) {
 					value: `crap_${dateKey}`
 				}
 			]
-		}
-	];
-
-	if (responses && responses.length > 0) {
-		const responsesMarkdown = [];
-		responses.forEach(resp => {
-			const respEmoji = resp.answer ? ':+1:' : ':-1:';
-			responsesMarkdown.push(`${respEmoji} ${resp.name}`);
-		});
-
-		blocks.push({
-			type: 'section',
-			text: {
-				type: 'mrkdwn',
-				text: responsesMarkdown.join('\n')
-			}
 		});
 	}
-
-	return blocks;
-};
-
-// https://api.slack.com/tools/block-kit-builder?mode=message&blocks=%5B%7B%22type%22%3A%22section%22%2C%22text%22%3A%7B%22type%22%3A%22mrkdwn%22%2C%22text%22%3A%22Trivia%20question%20for%20November%208%2C%202019%5Cn%3E%20Harald%2C%20nicknamed%20Tangle-hair%2C%20took%20an%20oath%20not%20to%20cut%20or%20comb%20his%20hair%20until%20he%20became%20the%20first%20king%20of%20a%20united%20Norway.%5Cn*Answer%3A*%20Fact%5Cn%3E%20After%20achieving%20his%20goal%20ten%20years%20later%2C%20Harald%20cut%20his%20hair%2C%20trimmed%20his%20beard%2C%20and%20became%20known%20as%20Harald%20Fairhair%20or%20Finehair%2C%20King%20of%20Norway.%20%5C%22Hair%5C%22%20to%20the%20throne!%22%7D%7D%2C%7B%22type%22%3A%22section%22%2C%22text%22%3A%7B%22type%22%3A%22mrkdwn%22%2C%22text%22%3A%22%3Aheavy_check_mark%3A%20%3A%2B1%3A%20Alice%5Cn%3Ax%3A%20%3A-1%3A%20Bob%5Cn%3Aheavy_check_mark%3A%20%3A%2B1%3A%20Carolyn%5Cn%3Aheavy_check_mark%3A%20%3A%2B1%3A%20Dave%22%7D%7D%5D
-module.exports.getClosedMessage = function({date, questionText, answer, answerText, responses}) {
-	let mainMarkdown = `Trivia question for ${dateFormat(date, 'mmmm d, yyyy')}`;
-	if (questionText) {
-		mainMarkdown += `\n> ${questionText}`;
-	}
-	mainMarkdown +=`\n*Answer:* ${answer ? 'Fact' : 'Crap'}`;
-	if (answerText) {
-		mainMarkdown += `\n> ${answerText}`;
-	}
-
-	const blocks = [
-		{
-			type: 'section',
-			text: {
-				type: 'mrkdwn',
-				text: mainMarkdown
-			}
-		}
-	];
 
 	if (responses && responses.length > 0) {
 		const responsesMarkdown = [];

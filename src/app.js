@@ -145,7 +145,6 @@ router.post('/action', verifyRequest, actionHandler(async (action) => {
 			const slackId = action.container.message_ts;
 			const timestamp = Date.now();
 			logger.debug({user, channel, date, answer, timestamp}, 'Vote action');
-			await dynamo.setSlackId({channel, date, slackId});
 			await dynamo.vote({channel, date, user, answer, timestamp, slackId});
 			break;
 		}
