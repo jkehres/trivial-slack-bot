@@ -142,10 +142,9 @@ router.post('/action', verifyRequest, actionHandler(async (action) => {
 		case 'block_actions': {
 			const [answer, date] = action.actions[0].value.split('_');
 			const channel = action.channel.id;
-			const slackId = action.container.message_ts;
 			const timestamp = Date.now();
 			logger.debug({user, channel, date, answer, timestamp}, 'Vote action');
-			await dynamo.vote({channel, date, user, answer, timestamp, slackId});
+			await dynamo.vote({channel, date, user, answer, timestamp});
 			break;
 		}
 	}
