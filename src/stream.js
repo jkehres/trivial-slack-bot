@@ -20,12 +20,13 @@ module.exports.handler = async (event) => {
 				return false;
 			}
 
-			// Tag for a transient record that should be ignored.
+			// ignore alias records for current trivia question
 			if (record.date === '_current') {
 				return false;
 			}
 
-			// ignore cases where there is a userlist or an answer without a slackId
+			// ignore records where there is a userlist or an answer without a slackId -
+			// handles the race condition between setting the slack ID and voting/answering
 			if ((record.answer || Object.keys(record.users).length > 0) && !record.slackId) {
 				return false;
 			}
@@ -40,15 +41,15 @@ module.exports.handler = async (event) => {
 		const latestRecord = records.pop().pop();
 		logger.debug({latestRecord}, 'Event received');
 
-		const responses = latestRecord.users && Object.keys(latestRecord.users).map(key => {
+		const responses = latestRecord.users && Object.keys(latestRecord.users).map(name => {
 			return {
-				name: `<@${key}>`,
-				answer: latestRecord.users[key] && latestRecord.users[key].answer  === 'fact',
-				timestamp: latestRecord.users[key] && latestRecord.users[key].timestamp
+				name,
+				answer: latestRecord.users[name] && latestRecord.users[name].answer  === 'fact',
+				timestamp: latestRecord.users[name] && latestRecord.users[name].timestamp
 			};
 		}).sort((a,b) => a.timestamp - b.timestamp);
 
-		const blocks = blockKit.getOpenMessage({
+		const blocks = blockKit.getTriviaMessage({
 			date: Date.parse(latestRecord.date),
 			questionText: latestRecord.questionText,
 			responses,
