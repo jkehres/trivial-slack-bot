@@ -87,7 +87,7 @@ module.exports.getTriviaMessage = function({date, questionText, responses, answe
 		mainMarkdown += `\n> ${questionText}`;
 	}
 	if (answer) {
-		mainMarkdown +=`\n*Answer:* ${answer == 'fact' ? 'Fact' : 'Crap'}`;
+		mainMarkdown +=`\n*Answer:* ${(answer === 'fact') ? 'Fact' : 'Crap'}`;
 		if (answerText) {
 			mainMarkdown += `\n> ${answerText}`;
 		}
@@ -133,7 +133,7 @@ module.exports.getTriviaMessage = function({date, questionText, responses, answe
 	if (responses && responses.length > 0) {
 		const responsesMarkdown = [];
 		responses.forEach(resp => {
-			const respEmoji = resp.answer ? ':+1:' : ':-1:';
+			const respEmoji = (resp.answer === 'fact') ? ':+1:' : ':-1:';
 			if (answer) {
 				const resultEmoji = (resp.answer === answer) ? ':heavy_check_mark:' : ':x:';
 				responsesMarkdown.push(`${resultEmoji} ${respEmoji} <@${resp.name}>`);
