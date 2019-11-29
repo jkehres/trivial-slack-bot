@@ -44,7 +44,7 @@ module.exports.handler = async (event) => {
 		const responses = latestRecord.users && Object.keys(latestRecord.users).map(name => {
 			return {
 				name,
-				answer: latestRecord.users[name] && latestRecord.users[name].answer  === 'fact',
+				answer: latestRecord.users[name] && latestRecord.users[name].answer,
 				timestamp: latestRecord.users[name] && latestRecord.users[name].timestamp
 			};
 		}).sort((a,b) => a.timestamp - b.timestamp);

@@ -87,7 +87,7 @@ module.exports.getTriviaMessage = function({date, questionText, responses, answe
 		mainMarkdown += `\n> ${questionText}`;
 	}
 	if (answer) {
-		mainMarkdown +=`\n*Answer:* ${answer ? 'Fact' : 'Crap'}`;
+		mainMarkdown +=`\n*Answer:* ${answer == 'fact' ? 'Fact' : 'Crap'}`;
 		if (answerText) {
 			mainMarkdown += `\n> ${answerText}`;
 		}
