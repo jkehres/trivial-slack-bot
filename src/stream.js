@@ -57,12 +57,17 @@ module.exports.handler = async (event) => {
 			answerText: latestRecord.answerText
 		});
 
-		await postMessage({
-			date: latestRecord.date,
-			channel: latestRecord.channel,
-			blocks,
-			slackId: latestRecord.slackId
-		});
+		try {
+			await postMessage({
+				date: latestRecord.date,
+				channel: latestRecord.channel,
+				blocks,
+				slackId: latestRecord.slackId
+			});
+		} catch (err) {
+			logger.error({err}, 'Failed to post message');
+			// don't fail lambda or we could get stuck processing a bad record forever
+		}
 	}
 };
 
@@ -80,8 +85,7 @@ async function postMessage({date, channel, blocks, slackId}) {
 		: await slack.chat.postMessage(postMessageParamters);
 
 	if (!result.ok) {
-		logger.error({result}, 'Failed to set message');
-		return;
+		throw new Error(`Failed to set message: ${result.error}`);
 	}
 
 	if (!slackId) {
