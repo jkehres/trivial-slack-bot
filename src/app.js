@@ -17,16 +17,32 @@ const slack = require('./slackClient');
 const dynamo = require('./dynamo');
 
 async function postEphemeral({channel, text, blocks, user}) {
-	const result = await slack.chat.postEphemeral({channel, text, blocks, user});
-	if (!result.ok) {
-		throw new AppError(`Failed to post message: ${result.error}`, 500);
+	try {
+		const result = await slack.chat.postEphemeral({channel, text, blocks, user});
+		if (!result.ok) {
+			throw new AppError(`Failed to post message: ${result.error}`, 500);
+		}
+	} catch (err) {
+		if (err.data && err.data.error) {
+			throw new AppError(`Failed to post message: ${err.data.error}`, 500);
+		} else {
+			throw new AppError(`Failed to post message: ${err.message}`, 500);
+		}
 	}
 }
 
 async function openView({trigger_id, view}) {
-	const result = await slack.views.open({trigger_id, view});
-	if (!result.ok) {
-		throw new AppError(`Failed to open view: ${result.error}`, 500);
+	try {
+		const result = await slack.views.open({trigger_id, view});
+		if (!result.ok) {
+			throw new AppError(`Failed to open view: ${result.error}`, 500);
+		}
+	} catch (err) {
+		if (err.data && err.data.error) {
+			throw new AppError(`Failed to open view: ${err.data.error}`, 500);
+		} else {
+			throw new AppError(`Failed to open view: ${err.message}`, 500);
+		}
 	}
 }
 
