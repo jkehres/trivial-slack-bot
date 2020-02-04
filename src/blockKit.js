@@ -22,7 +22,7 @@ module.exports.getHelpMessage = function() {
 			type: 'section',
 			text: {
 				type: 'mrkdwn',
-				text: 'Hi! I\'m Trivial, a trivia bot for Fact or Crap questions. Here are my commands:\n`/trivial create` - post a new trivia question to the channel\n`/trivial close` - post the answer to an open trivia question'
+				text: 'Hi! I\'m Trivial, a trivia bot for Fact or Crap questions. Here are my commands:\n`/trivial create` - post a new trivia question to the channel\n`/trivial close` - post the answer to an open trivia question\n`/trivial stats YYYY-MM` - post the results for specified month'
 			}
 		}
 	];
@@ -62,6 +62,19 @@ module.exports.getCloseErrorMessage = function() {
 			text: {
 				type: 'mrkdwn',
 				text: 'No trivia question is currently open in this channel. To create a question use `/trivial create`.'
+			}
+		}
+	];
+};
+
+// https://api.slack.com/tools/block-kit-builder?mode=message&blocks=%5B%7B%22type%22%3A%22section%22%2C%22text%22%3A%7B%22type%22%3A%22mrkdwn%22%2C%22text%22%3A%22I%20don%27t%20understand%20the%20command%20%60%2Ftrivial%20foobar%60.%20Type%20%60%2Ftrivial%20help%60%20to%20see%20my%20available%20commands.%22%7D%7D%5D
+module.exports.getInvalidCommandErrorMessage = function(commandText) {
+	return [
+		{
+			type: 'section',
+			text: {
+				type: 'mrkdwn',
+				text: `I don't understand the command \`/trivial ${commandText}\`. Type \`/trivial help\` to see my available commands.`
 			}
 		}
 	];
@@ -296,4 +309,29 @@ module.exports.getCloseModal = function({channel, date}) {
 			}
 		]
 	};
+};
+
+// https://api.slack.com/tools/block-kit-builder?mode=message&blocks=%5B%7B%22type%22%3A%22section%22%2C%22text%22%3A%7B%22type%22%3A%22mrkdwn%22%2C%22text%22%3A%22Trivia%20results%20for%20December%2C%202019%5Cn%5Cn%40user.one%3A%207%20%3Aheavy_check_mark%3A%2C%204%20%3Ax%3A%5Cn%40user.two%3A%205%20%3Aheavy_check_mark%3A%2C%206%20%3Ax%3A%5Cn%40user.longname%3A%205%20%3Aheavy_check_mark%3A%2C%206%20%3Ax%3A%5Cn%40short%3A%205%20%3Aheavy_check_mark%3A%2C%205%20%3Ax%3A%5Cn%5Cn*Most%20right%3A*%20%40user.one%5Cn*Most%20wrong%3A*%20%40user.two%2C%20%40user.longname%22%7D%7D%5D
+module.exports.getStats = function({datePrefix, users, mostRight, mostWrong}) {
+	const markdown = [`Trivia results for ${dateFormat(datePrefix, 'UTC:mmmm, yyyy')}`, ''];
+	if (users.length === 0) {
+		markdown.push('_(None found)_');
+	} else {
+		users.forEach(user => {
+			markdown.push(`<@${user.name}>: ${user.right} :heavy_check_mark:, ${user.wrong} :x:`);
+		});
+		markdown.push('');
+		markdown.push(`*Most right:* ${mostRight.map(u => `<@${u}>`).join(', ')}`);
+		markdown.push(`*Most wrong:* ${mostWrong.map(u => `<@${u}>`).join(', ')}`);
+	}
+
+	return [
+		{
+			type: 'section',
+			text: {
+				type: 'mrkdwn',
+				text: markdown.join('\n')
+			}
+		}
+	];
 };

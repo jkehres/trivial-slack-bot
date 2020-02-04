@@ -174,3 +174,25 @@ module.exports.vote = async ({channel, date, user, answer, timestamp}) => {
 	return await voteFirst({channel, date, user, answer, timestamp}) ||
 		await voteAgain({channel, date, user, answer});
 };
+
+module.exports.query = async (channel, datePrefix) => {
+	let lastEvaluatedKey = undefined;
+	const items = [];
+
+	do {
+		const result = await dynamodb.query({
+			TableName: TABLE_NAME,
+			ExpressionAttributeNames: {
+				'#channel': 'channel',
+				'#date': 'date'
+			},
+			ExpressionAttributeValues: marshall({':channel': channel, ':datePrefix': datePrefix}),
+			KeyConditionExpression: '#channel = :channel and begins_with(#date, :datePrefix)',
+			ExclusiveStartKey: lastEvaluatedKey
+		}).promise();
+		lastEvaluatedKey = result.LastEvaluatedKey;
+		result.Items.forEach(item => items.push(item));
+	} while (lastEvaluatedKey);
+
+	return items.map(unmarshall);
+};

@@ -15,10 +15,12 @@ const logger = require('./logger');
 const blockKit = require('./blockKit');
 const slack = require('./slackClient');
 const dynamo = require('./dynamo');
+const calcStats = require('./calcStats');
 
-async function postEphemeral({channel, text, blocks, user}) {
+async function postMessage({channel, text, blocks, user, ephemeral}) {
 	try {
-		const result = await slack.chat.postEphemeral({channel, text, blocks, user});
+		const post = ephemeral ? slack.chat.postEphemeral : slack.chat.postMessage;
+		const result = await post({channel, text, blocks, user});
 		if (!result.ok) {
 			throw new AppError(`Failed to post message: ${result.error}`, 500);
 		}
@@ -63,7 +65,8 @@ router.post('/command', verifyRequest, commandHandler(async (command) => {
 	logger.debug({command}, 'Received command');
 	const channel = command.channel_id;
 	const user = command.user_id;
-	switch (command.text) {
+	const tokenizedText = command.text.split(' ');
+	switch (tokenizedText[0]) {
 		case 'help':
 			logger.debug({user, channel}, 'Help command');
 			return {
@@ -71,6 +74,7 @@ router.post('/command', verifyRequest, commandHandler(async (command) => {
 				text: 'You asked for help',
 				blocks: blockKit.getHelpMessage()
 			};
+
 		case 'create': {
 			const date = await dynamo.getCurrentDate(channel);
 			logger.debug({user, channel, date}, 'Create command');
@@ -89,6 +93,7 @@ router.post('/command', verifyRequest, commandHandler(async (command) => {
 			}
 			break;
 		}
+
 		case 'close': {
 			const date = await dynamo.getCurrentDate(channel);
 			logger.debug({user, channel, date}, 'Close command');
@@ -110,6 +115,51 @@ router.post('/command', verifyRequest, commandHandler(async (command) => {
 			}
 			break;
 		}
+
+		case 'stats': {
+			if (tokenizedText.length != 2) {
+				logger.debug({user, channel, commandText: command.text}, 'Invalid parameter count');
+				return {
+					response_type: 'ephemeral',
+					text: 'Invalid command',
+					blocks: blockKit.getInvalidCommandErrorMessage(command.text)
+				};
+			}
+
+			const datePrefix = tokenizedText[1];
+			if (!/\d{4}-\d{2}/.test(datePrefix)) {
+				logger.debug({user, channel, datePrefix}, 'Invalid month parameter');
+				return {
+					response_type: 'ephemeral',
+					text: 'Invalid command',
+					blocks: blockKit.getInvalidCommandErrorMessage(command.text)
+				};
+			}
+
+			const questions = await dynamo.query(channel, datePrefix);
+			logger.debug({user, channel, datePrefix, questions}, 'Query result');
+
+			const stats = calcStats(questions);
+			logger.debug({user, channel, stats}, 'Stats result');
+
+			await postMessage({
+				channel,
+				user,
+				text: 'Results',
+				blocks: blockKit.getStats(Object.assign({datePrefix}, stats)),
+				ephemeral: false
+			});
+			break;
+		}
+
+		default: {
+			logger.debug({user, channel, commandText: command.text}, 'Invalid command');
+			return {
+				response_type: 'ephemeral',
+				text: 'Invalid command',
+				blocks: blockKit.getInvalidCommandErrorMessage(command.text)
+			};
+		}
 	}
 }));
 
@@ -127,11 +177,12 @@ router.post('/action', verifyRequest, actionHandler(async (action) => {
 					logger.debug({user, channel, date, questionText}, 'Create action');
 					if (!await dynamo.create({channel, date, questionText})) {
 						logger.debug({user, channel, date, questionText}, 'Create action failed');
-						await postEphemeral({
+						await postMessage({
 							channel,
 							user,
 							text: 'Create failed',
-							blocks: blockKit.getRecreateErrorMessage(Date.parse(date))
+							blocks: blockKit.getRecreateErrorMessage(Date.parse(date)),
+							ephemeral: true
 						});
 					}
 					break;
@@ -143,11 +194,12 @@ router.post('/action', verifyRequest, actionHandler(async (action) => {
 					logger.debug({user, channel, date, answer, answerText}, 'Close action');
 					if (!await dynamo.close({channel, date, answer, answerText})) {
 						logger.debug({user, channel, date, answer, answerText}, 'Close action failed');
-						await postEphemeral({
+						await postMessage({
 							channel,
 							user,
 							text: 'Internal error',
-							blocks: blockKit.getInternalErrorMessage()
+							blocks: blockKit.getInternalErrorMessage(),
+							ephemeral: true
 						});
 					}
 					break;
@@ -172,11 +224,12 @@ router.post('/event', verifyRequest, eventHandler(async (event) => {
 		const channel = event.channel;
 		const user = event.user;
 		logger.debug({user, channel}, 'Mention event');
-		await postEphemeral({
+		await postMessage({
 			channel,
 			user,
 			text: 'You mentioned me',
-			blocks: blockKit.getMentionedMessage()
+			blocks: blockKit.getMentionedMessage(),
+			ephemeral: true
 		});
 	}
 }));
