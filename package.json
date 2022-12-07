@@ -12,7 +12,7 @@
   "license": "ISC",
   "devDependencies": {
     "eslint": "^6.6.0",
-    "serverless": "^1.56.1",
+    "serverless": "^3.25.1",
     "serverless-plugin-common-excludes": "^3.0.0",
     "serverless-plugin-include-dependencies": "^4.0.0"
   },
